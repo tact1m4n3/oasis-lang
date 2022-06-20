@@ -145,5 +145,55 @@ func (is *IfStmt) stmtNode() {}
 func (is *IfStmt) String() string {
 	var out bytes.Buffer
 
+	out.WriteString("if ")
+	out.WriteString(is.Expr.String())
+	out.WriteString(" ")
+	out.WriteString(is.IfBlock.String())
+	if is.ElseBlock != nil {
+		out.WriteString(" else ")
+		out.WriteString(is.ElseBlock.String())
+	}
+
+	return out.String()
+}
+
+type ReturnStmt struct {
+	Expr Expr
+}
+
+func (rs *ReturnStmt) stmtNode() {}
+func (rs *ReturnStmt) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("return")
+	if rs.Expr != nil {
+		out.WriteString(" ")
+		out.WriteString(rs.Expr.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type FuncStmt struct {
+	Name     *Ident
+	ArgNames []*Ident
+	Body     *BlockStmt
+}
+
+func (fs *FuncStmt) stmtNode() {}
+func (fs *FuncStmt) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("fn ")
+	out.WriteString(fs.Name.String())
+	out.WriteString("(")
+	for _, name := range fs.ArgNames {
+		out.WriteString(name.String())
+		out.WriteString(", ")
+	}
+	out.WriteString(") ")
+	out.WriteString(fs.Body.String())
+
 	return out.String()
 }

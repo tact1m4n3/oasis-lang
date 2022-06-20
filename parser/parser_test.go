@@ -26,7 +26,7 @@ func TestParseExprStmt(t *testing.T) {
 		}
 
 		if tt.expr != es.Expr.String() {
-			t.Fatalf("tests[%d]: expr: expected %q, got %q", i, tt.expr, es.Expr.String())
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.expr, es.Expr.String())
 		}
 	}
 }
@@ -34,12 +34,11 @@ func TestParseExprStmt(t *testing.T) {
 func TestParseLetStmt(t *testing.T) {
 	tests := []struct {
 		input string
-		name  string
-		expr  string
+		stmt  string
 	}{
-		{"let a = 10;", "a", "10"},
-		{"let b = -10;", "b", "(-10)"},
-		{"let c = a + b;", "c", "(a + b)"},
+		{"let a = 10;", "let a = 10;"},
+		{"let b = -10;", "let b = (-10);"},
+		{"let c = a + b;", "let c = (a + b);"},
 	}
 
 	for i, tt := range tests {
@@ -51,12 +50,8 @@ func TestParseLetStmt(t *testing.T) {
 			t.Fatalf("tests[%d]: parser error: %s", i, err)
 		}
 
-		if tt.name != ls.Name.String() {
-			t.Fatalf("tests[%d]: name: expected %q, got %q", i, tt.name, ls.Name.String())
-		}
-
-		if tt.expr != ls.Expr.String() {
-			t.Fatalf("tests[%d]: expr: expected %q, got %q", i, tt.expr, ls.Expr.String())
+		if tt.stmt != ls.String() {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.stmt, ls.String())
 		}
 	}
 }
@@ -64,7 +59,7 @@ func TestParseLetStmt(t *testing.T) {
 func TestParseBlockStmt(t *testing.T) {
 	tests := []struct {
 		input string
-		block string
+		stmt  string
 	}{
 		{"{ let a = 10; a + 10 }", "{ let a = 10; (a + 10); }"},
 		{`{
@@ -84,8 +79,56 @@ func TestParseBlockStmt(t *testing.T) {
 			t.Fatalf("tests[%d]: parser error: %s", i, err)
 		}
 
-		if tt.block != bs.String() {
-			t.Fatalf("tests[%d]: expr: expected %q, got %q", i, tt.block, bs.String())
+		if tt.stmt != bs.String() {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.stmt, bs.String())
+		}
+	}
+}
+
+func TestParseIfStmt(t *testing.T) {
+	tests := []struct {
+		input string
+		stmt  string
+	}{
+		{"if a > b { a }", "if (a > b) { a; }"},
+		{"if a > b { a } else { b }", "if (a > b) { a; } else { b; }"},
+	}
+
+	for i, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+
+		is, err := p.parseIfStmt()
+		if err != nil {
+			t.Fatalf("tests[%d]: parser error: %s", i, err)
+		}
+
+		if tt.stmt != is.String() {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.stmt, is.String())
+		}
+	}
+}
+
+func TestParseFuncStmt(t *testing.T) {
+	tests := []struct {
+		input string
+		stmt  string
+	}{
+		{"fn nothing() { 10 }", "fn nothing() { 10; }"},
+		{"fn sum(a, b) { return a + b }", "fn sum(a, b, ) { return (a + b); }"},
+	}
+
+	for i, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+
+		is, err := p.parseFuncStmt()
+		if err != nil {
+			t.Fatalf("tests[%d]: parser error: %s", i, err)
+		}
+
+		if tt.stmt != is.String() {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.stmt, is.String())
 		}
 	}
 }

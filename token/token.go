@@ -39,9 +39,8 @@ const (
 	LET
 	IF
 	ELSE
-	FOR
-	FUNC
 	RETURN
+	FUNC
 )
 
 var TokenName = map[TokenType]string{
@@ -74,9 +73,8 @@ var TokenName = map[TokenType]string{
 	LET:    "let",
 	IF:     "if",
 	ELSE:   "else",
-	FOR:    "for",
-	FUNC:   "fn",
 	RETURN: "return",
+	FUNC:   "fn",
 }
 
 func (tt TokenType) String() string {
@@ -87,9 +85,8 @@ var keywords = map[string]TokenType{
 	"let":    LET,
 	"if":     IF,
 	"else":   ELSE,
-	"for":    FOR,
-	"fn":     FUNC,
 	"return": RETURN,
+	"fn":     FUNC,
 }
 
 func LookupIdent(ident string) TokenType {
