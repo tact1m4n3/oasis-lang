@@ -5,11 +5,12 @@ type TokenType int
 type Token struct {
 	Type TokenType
 	Lit  string
-	Pos  int
 }
 
 const (
-	ILLEGAL TokenType = iota
+	_ TokenType = iota
+
+	ILLEGAL
 	EOF
 
 	IDENT

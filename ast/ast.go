@@ -5,8 +5,6 @@ import (
 )
 
 type Node interface {
-	StartPos() int
-	EndPos() int
 	String() string
 }
 
@@ -24,89 +22,64 @@ type Program struct {
 	Stmts []Stmt
 }
 
-func (p *Program) StartPos() int {
-	if len(p.Stmts) == 0 {
-		return 0
-	}
-	return p.Stmts[0].StartPos()
-}
-
-func (p *Program) EndPos() int {
-	if len(p.Stmts) == 0 {
-		return 0
-	}
-	return p.Stmts[len(p.Stmts)-1].EndPos()
-}
-
 func (p *Program) String() string {
 	var out bytes.Buffer
 
 	for _, stmt := range p.Stmts {
 		out.WriteString(stmt.String())
-		out.WriteString("\n")
+		out.WriteString(" ")
 	}
 
 	return out.String()
 }
 
 type Ident struct {
-	Value    string
-	ValuePos int
+	Value string
 }
 
 func (i *Ident) exprNode()      {}
-func (i *Ident) StartPos() int  { return i.ValuePos }
-func (i *Ident) EndPos() int    { return i.ValuePos + len(i.Value) }
 func (i *Ident) String() string { return i.Value }
 
 type IntLit struct {
-	Value    string
-	ValuePos int
+	Value string
 }
 
 func (il *IntLit) exprNode()      {}
-func (il *IntLit) StartPos() int  { return il.ValuePos }
-func (il *IntLit) EndPos() int    { return il.ValuePos + len(il.Value) }
 func (il *IntLit) String() string { return il.Value }
 
-type UnaryExpr struct {
+type PrefixExpr struct {
 	Op    string
-	OpPos int
 	Right Expr
 }
 
-func (ue *UnaryExpr) exprNode()     {}
-func (ue *UnaryExpr) StartPos() int { return ue.OpPos }
-func (ue *UnaryExpr) EndPos() int   { return ue.Right.EndPos() }
-func (ue *UnaryExpr) String() string {
+func (pe *PrefixExpr) exprNode() {}
+func (pe *PrefixExpr) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(ue.Op)
-	out.WriteString(ue.Right.String())
+	out.WriteString(pe.Op)
+	out.WriteString(pe.Right.String())
 	out.WriteString(")")
 
 	return out.String()
 }
 
-type BinExpr struct {
+type InfixExpr struct {
 	Left  Expr
 	Op    string
 	Right Expr
 }
 
-func (be *BinExpr) exprNode()     {}
-func (be *BinExpr) StartPos() int { return be.Left.StartPos() }
-func (be *BinExpr) EndPos() int   { return be.Right.EndPos() }
-func (be *BinExpr) String() string {
+func (ie *InfixExpr) exprNode() {}
+func (ie *InfixExpr) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("(")
-	out.WriteString(be.Left.String())
+	out.WriteString(ie.Left.String())
 	out.WriteString(" ")
-	out.WriteString(be.Op)
+	out.WriteString(ie.Op)
 	out.WriteString(" ")
-	out.WriteString(be.Right.String())
+	out.WriteString(ie.Right.String())
 	out.WriteString(")")
 
 	return out.String()
@@ -116,9 +89,7 @@ type ExprStmt struct {
 	Expr Expr
 }
 
-func (es *ExprStmt) stmtNode()     {}
-func (es *ExprStmt) StartPos() int { return es.Expr.StartPos() }
-func (es *ExprStmt) EndPos() int   { return es.Expr.EndPos() }
+func (es *ExprStmt) stmtNode() {}
 func (es *ExprStmt) String() string {
 	var out bytes.Buffer
 
@@ -129,22 +100,50 @@ func (es *ExprStmt) String() string {
 }
 
 type LetStmt struct {
-	Name    string
-	NamePos int
-	Expr    Expr
+	Name *Ident
+	Expr Expr
 }
 
-func (ls *LetStmt) stmtNode()     {}
-func (ls *LetStmt) StartPos() int { return ls.NamePos }
-func (ls *LetStmt) EndPos() int   { return ls.Expr.EndPos() }
+func (ls *LetStmt) stmtNode() {}
 func (ls *LetStmt) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("let ")
-	out.WriteString(ls.Name)
+	out.WriteString(ls.Name.String())
 	out.WriteString(" = ")
 	out.WriteString(ls.Expr.String())
 	out.WriteString(";")
+
+	return out.String()
+}
+
+type BlockStmt struct {
+	Stmts []Stmt
+}
+
+func (bs *BlockStmt) stmtNode() {}
+func (bs *BlockStmt) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("{ ")
+	for _, stmt := range bs.Stmts {
+		out.WriteString(stmt.String())
+		out.WriteString(" ")
+	}
+	out.WriteString("}")
+
+	return out.String()
+}
+
+type IfStmt struct {
+	Expr      Expr
+	IfBlock   *BlockStmt
+	ElseBlock *BlockStmt
+}
+
+func (is *IfStmt) stmtNode() {}
+func (is *IfStmt) String() string {
+	var out bytes.Buffer
 
 	return out.String()
 }

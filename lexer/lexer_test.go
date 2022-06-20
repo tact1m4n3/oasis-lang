@@ -91,7 +91,7 @@ else {
 		tok := l.NextToken()
 		fmt.Println(tok.Type)
 		if tok.Type != tt.Type {
-			t.Fatalf("wrong token type(%d): expected %q, got %q", tok.Pos, tt.Type, tok.Type)
+			t.Fatalf("wrong token type: expected %q, got %q", tt.Type, tok.Type)
 		}
 
 		if tok.Lit != tt.Lit {

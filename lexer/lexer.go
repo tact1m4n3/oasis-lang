@@ -5,11 +5,13 @@ import (
 )
 
 type Lexer struct {
-	input      string
-	pos        int
-	readPos    int
-	expectSemi bool
+	input string
+
+	pos     int
+	readPos int
+
 	ch         byte
+	insertSemi bool
 }
 
 func New(input string) *Lexer {
@@ -23,69 +25,62 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.skipWhitespace()
 
-	if l.expectSemi && (l.ch == 0 || l.ch == '\n' || l.ch == '}') {
-		l.expectSemi = false
-		return token.Token{Type: token.SEMI, Lit: ";", Pos: l.pos}
+	if l.insertSemi && (l.ch == 0 || l.ch == '\n' || l.ch == '}') {
+		l.insertSemi = false
+		return token.Token{Type: token.SEMI, Lit: ";"}
 	}
 
-	l.expectSemi = false
+	l.insertSemi = false
 	switch l.ch {
 	case 0:
-		tok = token.Token{Type: token.EOF, Lit: "", Pos: l.pos}
-	// case '\n':
-	// 	l.expectSemi = false
-	// 	tok = token.Token{Type: token.SEMI, Lit: ";", Pos: l.pos}
+		tok = token.Token{Type: token.EOF, Lit: ""}
 	case '+':
-		tok = token.Token{Type: token.ADD, Lit: "+", Pos: l.pos}
+		tok = token.Token{Type: token.ADD, Lit: "+"}
 	case '-':
-		tok = token.Token{Type: token.SUB, Lit: "-", Pos: l.pos}
+		tok = token.Token{Type: token.SUB, Lit: "-"}
 	case '*':
-		tok = token.Token{Type: token.MUL, Lit: "*", Pos: l.pos}
+		tok = token.Token{Type: token.MUL, Lit: "*"}
 	case '/':
-		tok = token.Token{Type: token.DIV, Lit: "/", Pos: l.pos}
+		tok = token.Token{Type: token.DIV, Lit: "/"}
 	case '=':
 		if l.peek() == '=' {
-			pos := l.pos
 			l.advance()
-			tok = token.Token{Type: token.EQ, Lit: "==", Pos: pos}
+			tok = token.Token{Type: token.EQ, Lit: "=="}
 		} else {
-			tok = token.Token{Type: token.ASSIGN, Lit: "=", Pos: l.pos}
+			tok = token.Token{Type: token.ASSIGN, Lit: "="}
 		}
 	case '<':
-		tok = token.Token{Type: token.LT, Lit: "<", Pos: l.pos}
+		tok = token.Token{Type: token.LT, Lit: "<"}
 	case '>':
-		tok = token.Token{Type: token.GT, Lit: ">", Pos: l.pos}
+		tok = token.Token{Type: token.GT, Lit: ">"}
 	case '!':
 		if l.peek() == '=' {
-			pos := l.pos
 			l.advance()
-			tok = token.Token{Type: token.NEQ, Lit: "!=", Pos: pos}
+			tok = token.Token{Type: token.NEQ, Lit: "!="}
 		} else {
-			tok = token.Token{Type: token.NOT, Lit: "!", Pos: l.pos}
+			tok = token.Token{Type: token.NOT, Lit: "!"}
 		}
 	case ',':
-		tok = token.Token{Type: token.COMMA, Lit: ",", Pos: l.pos}
+		tok = token.Token{Type: token.COMMA, Lit: ","}
 	case ';':
-		tok = token.Token{Type: token.SEMI, Lit: ";", Pos: l.pos}
+		tok = token.Token{Type: token.SEMI, Lit: ";"}
 	case '(':
-		tok = token.Token{Type: token.LPAREN, Lit: "(", Pos: l.pos}
+		tok = token.Token{Type: token.LPAREN, Lit: "("}
 	case ')':
-		l.expectSemi = true
-		tok = token.Token{Type: token.RPAREN, Lit: ")", Pos: l.pos}
+		l.insertSemi = true
+		tok = token.Token{Type: token.RPAREN, Lit: ")"}
 	case '{':
-		tok = token.Token{Type: token.LBRACE, Lit: "{", Pos: l.pos}
+		tok = token.Token{Type: token.LBRACE, Lit: "{"}
 	case '}':
-		tok = token.Token{Type: token.RBRACE, Lit: "}", Pos: l.pos}
+		tok = token.Token{Type: token.RBRACE, Lit: "}"}
 	default:
 		if isLetter(l.ch) {
-			l.expectSemi = true
-			tok.Pos = l.pos
+			l.insertSemi = true
 			tok.Lit = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Lit)
 			return tok
 		} else if isDigit(l.ch) {
-			l.expectSemi = true
-			tok.Pos = l.pos
+			l.insertSemi = true
 			tok.Type = token.INT
 			tok.Lit = l.readNumber()
 			return tok
@@ -117,7 +112,7 @@ func (l *Lexer) peek() byte {
 }
 
 func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' && !l.expectSemi {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' || l.ch == '\n' && !l.insertSemi {
 		l.advance()
 	}
 }
