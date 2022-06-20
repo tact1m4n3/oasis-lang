@@ -71,7 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 func (p *Parser) ParseProgram() (*ast.Program, error) {
 	var stmts []ast.Stmt
 	for p.tok.Type != token.EOF {
-		stmt, err := p.parseStatement()
+		stmt, err := p.parseStmt()
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +80,7 @@ func (p *Parser) ParseProgram() (*ast.Program, error) {
 	return &ast.Program{Stmts: stmts}, nil
 }
 
-func (p *Parser) parseStatement() (ast.Stmt, error) {
+func (p *Parser) parseStmt() (ast.Stmt, error) {
 	switch p.tok.Type {
 	case token.LET:
 		return p.parseLetStmt()
@@ -246,7 +246,7 @@ func (p *Parser) parseBlockStmt() (*ast.BlockStmt, error) {
 
 	var stmts []ast.Stmt
 	for p.tok.Type != token.RBRACE && p.tok.Type != token.EOF {
-		stmt, err := p.parseStatement()
+		stmt, err := p.parseStmt()
 		if err != nil {
 			return nil, err
 		}
