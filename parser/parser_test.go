@@ -32,9 +32,9 @@ func TestParseLetStmt(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"let a = 10;", "let a = 10;"},
-		{"let b = -10;", "let b = (-10);"},
-		{"let c = a + b;", "let c = (a + b);"},
+		{"let a = 10", "let a = 10;"},
+		{"let b = -10", "let b = (-10);"},
+		{"let c = a + b", "let c = (a + b);"},
 	}
 
 	for i, tt := range tests {
@@ -52,13 +52,13 @@ func TestParseBlockStmt(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"{ let a = 10; a + 10 }", "{ let a = 10; (a + 10); }"},
+		{"{ let a = 10; print(a + 10) }", "{ let a = 10; print((a + 10), ); }"},
 		{`{
 	let x = 10
 	let y = 10
 	let z = x + y
-	z
-}`, "{ let x = 10; let y = 10; let z = (x + y); z; }"},
+	print(z)
+}`, "{ let x = 10; let y = 10; let z = (x + y); print(z, ); }"},
 	}
 
 	for i, tt := range tests {
@@ -76,8 +76,8 @@ func TestParseIfStmt(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"if a > b { a }", "if (a > b) { a; }"},
-		{"if a > b { a } else { b }", "if (a > b) { a; } else { b; }"},
+		{"if a > b { print(a) }", "if (a > b) { print(a, ); }"},
+		{"if a > b { print(a) } else { print(b) }", "if (a > b) { print(a, ); } else { print(b, ); }"},
 	}
 
 	for i, tt := range tests {
@@ -95,8 +95,8 @@ func TestParseReturnStmt(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"fn nothing() { 10 }", "fn nothing() { 10; }"},
-		{"fn sum(a, b) { return a + b }", "fn sum(a, b, ) { return (a + b); }"},
+		{"return", "return;"},
+		{"return 10", "return 10;"},
 	}
 
 	for i, tt := range tests {

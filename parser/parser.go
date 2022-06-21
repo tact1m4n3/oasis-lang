@@ -117,7 +117,8 @@ func (p *Parser) parseExprStmt() (*ast.ExprStmt, error) {
 func (p *Parser) parseExpr(prec int) (ast.Expr, error) {
 	prefix, ok := p.prefixParseFns[p.tok.Type]
 	if !ok {
-		return nil, fmt.Errorf("no prefix parse function for %q", p.tok.Type)
+		return nil, fmt.Errorf("expected %q, %q, %q, %q or %q, got %q",
+			token.IDENT, token.INT, token.SUB, token.NOT, token.LPAREN, p.tok.Type)
 	}
 
 	left, err := prefix()
@@ -128,7 +129,7 @@ func (p *Parser) parseExpr(prec int) (ast.Expr, error) {
 	for p.tok.Type != token.SEMI && prec < p.getPrecedence() {
 		infix, ok := p.infixParseFns[p.tok.Type]
 		if !ok {
-			return nil, fmt.Errorf("no infix parse function for %q", p.tok.Type)
+			return nil, fmt.Errorf("this should never have happened. what did you do???")
 		}
 
 		left, err = infix(left)
