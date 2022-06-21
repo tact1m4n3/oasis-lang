@@ -19,14 +19,15 @@ const (
 )
 
 var precedences = map[token.TokenType]int{
-	token.EQ:  EQUALS,
-	token.NEQ: EQUALS,
-	token.LT:  LESSGREATER,
-	token.GT:  LESSGREATER,
-	token.ADD: SUM,
-	token.SUB: SUM,
-	token.MUL: PRODUCT,
-	token.DIV: PRODUCT,
+	token.EQ:     EQUALS,
+	token.NEQ:    EQUALS,
+	token.LT:     LESSGREATER,
+	token.GT:     LESSGREATER,
+	token.ADD:    SUM,
+	token.SUB:    SUM,
+	token.MUL:    PRODUCT,
+	token.DIV:    PRODUCT,
+	token.LPAREN: CALL,
 }
 
 type (
@@ -64,6 +65,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NEQ, p.parseInfixExpr)
 	p.registerInfix(token.LT, p.parseInfixExpr)
 	p.registerInfix(token.GT, p.parseInfixExpr)
+	p.registerInfix(token.LPAREN, p.parseCallExpr)
 
 	return p
 }
@@ -208,6 +210,36 @@ func (p *Parser) parseGroupedExpr() (ast.Expr, error) {
 	return expr, nil
 }
 
+func (p *Parser) parseCallExpr(left ast.Expr) (ast.Expr, error) {
+	if p.tok.Type != token.LPAREN {
+		return nil, fmt.Errorf("expected %q, got %q", token.LPAREN, p.tok.Type)
+	}
+	p.advance()
+
+	var args []ast.Expr
+	for p.tok.Type != token.EOF {
+		expr, err := p.parseExpr(LOWEST)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, expr)
+
+		if p.tok.Type == token.RPAREN {
+			break
+		} else if p.tok.Type != token.COMMA {
+			return nil, fmt.Errorf("expected %q, got %q", token.COMMA, p.tok.Type)
+		}
+		p.advance()
+	}
+
+	if p.tok.Type != token.RPAREN {
+		return nil, fmt.Errorf("expected %q, got %q", token.RPAREN, p.tok.Type)
+	}
+	p.advance()
+
+	return &ast.CallExpr{Left: left, Args: args}, nil
+}
+
 func (p *Parser) parseLetStmt() (*ast.LetStmt, error) {
 	if p.tok.Type != token.LET {
 		return nil, fmt.Errorf("expected %q, got %q", token.LET, p.tok.Type)
@@ -335,9 +367,13 @@ func (p *Parser) parseFuncStmt() (*ast.FuncStmt, error) {
 	for p.tok.Type != token.RPAREN && p.tok.Type != token.EOF {
 		argNames = append(argNames, &ast.Ident{Value: p.tok.Lit})
 		p.advance()
-		if p.tok.Type == token.COMMA {
-			p.advance()
+
+		if p.tok.Type == token.RPAREN {
+			break
+		} else if p.tok.Type != token.COMMA {
+			return nil, fmt.Errorf("expected %q, got %q", token.COMMA, p.tok.Type)
 		}
+		p.advance()
 	}
 
 	if p.tok.Type != token.RPAREN {

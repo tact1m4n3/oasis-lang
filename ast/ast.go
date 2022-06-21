@@ -85,6 +85,26 @@ func (ie *InfixExpr) String() string {
 	return out.String()
 }
 
+type CallExpr struct {
+	Left Expr
+	Args []Expr
+}
+
+func (ce *CallExpr) exprNode() {}
+func (ce *CallExpr) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ce.Left.String())
+	out.WriteString("(")
+	for _, arg := range ce.Args {
+		out.WriteString(arg.String())
+		out.WriteString(", ")
+	}
+	out.WriteString(")")
+
+	return out.String()
+}
+
 type ExprStmt struct {
 	Expr Expr
 }
