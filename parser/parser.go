@@ -53,6 +53,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IDENT, p.parseIdent)
 	p.registerPrefix(token.INT, p.parseIntLit)
 	p.registerPrefix(token.SUB, p.parsePrefixExpr)
+	p.registerPrefix(token.MUL, p.parsePrefixExpr)
 	p.registerPrefix(token.NOT, p.parsePrefixExpr)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpr)
 
@@ -218,7 +219,7 @@ func (p *Parser) parseCallExpr(left ast.Expr) (ast.Expr, error) {
 	p.advance()
 
 	var args []ast.Expr
-	for p.tok.Type != token.EOF {
+	for p.tok.Type != token.RPAREN && p.tok.Type != token.EOF {
 		expr, err := p.parseExpr(LOWEST)
 		if err != nil {
 			return nil, err
@@ -253,8 +254,18 @@ func (p *Parser) parseLetStmt() (*ast.LetStmt, error) {
 	name := &ast.Ident{Value: p.tok.Lit}
 	p.advance()
 
+	ls := &ast.LetStmt{Name: name}
+
 	if p.tok.Type != token.ASSIGN {
-		return nil, fmt.Errorf("expected %q, got %q", token.ASSIGN, p.tok.Type)
+		typ, err := p.parseExpr(PREFIX)
+		if err != nil {
+			return nil, err
+		}
+		ls.Type = typ
+	}
+
+	if p.tok.Type != token.ASSIGN {
+		return ls, nil
 	}
 	p.advance()
 
@@ -262,13 +273,14 @@ func (p *Parser) parseLetStmt() (*ast.LetStmt, error) {
 	if err != nil {
 		return nil, err
 	}
+	ls.Expr = expr
 
 	if p.tok.Type != token.SEMI {
 		return nil, fmt.Errorf("expected %q, got %q", token.SEMI, p.tok.Type)
 	}
 	p.advance()
 
-	return &ast.LetStmt{Name: name, Expr: expr}, nil
+	return ls, nil
 }
 
 func (p *Parser) parseBlockStmt() (*ast.BlockStmt, error) {
@@ -365,9 +377,16 @@ func (p *Parser) parseFuncStmt() (*ast.FuncStmt, error) {
 	p.advance()
 
 	argNames := []*ast.Ident{}
+	argTypes := []ast.Expr{}
 	for p.tok.Type != token.RPAREN && p.tok.Type != token.EOF {
 		argNames = append(argNames, &ast.Ident{Value: p.tok.Lit})
 		p.advance()
+
+		typ, err := p.parseExpr(PREFIX)
+		if err != nil {
+			return nil, err
+		}
+		argTypes = append(argTypes, typ)
 
 		if p.tok.Type == token.RPAREN {
 			break
@@ -382,12 +401,23 @@ func (p *Parser) parseFuncStmt() (*ast.FuncStmt, error) {
 	}
 	p.advance()
 
+	fs := &ast.FuncStmt{Name: name, ArgNames: argNames, ArgTypes: argTypes}
+
+	if p.tok.Type != token.LBRACE {
+		typ, err := p.parseExpr(PREFIX)
+		if err != nil {
+			return nil, err
+		}
+		fs.ReturnType = typ
+	}
+
 	body, err := p.parseBlockStmt()
 	if err != nil {
 		return nil, err
 	}
+	fs.Body = body
 
-	return &ast.FuncStmt{Name: name, ArgNames: argNames, Body: body}, nil
+	return fs, nil
 }
 
 func (p *Parser) advance() {

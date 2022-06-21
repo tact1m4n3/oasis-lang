@@ -121,6 +121,7 @@ func (es *ExprStmt) String() string {
 
 type LetStmt struct {
 	Name *Ident
+	Type Expr
 	Expr Expr
 }
 
@@ -130,8 +131,14 @@ func (ls *LetStmt) String() string {
 
 	out.WriteString("let ")
 	out.WriteString(ls.Name.String())
-	out.WriteString(" = ")
-	out.WriteString(ls.Expr.String())
+	if ls.Type != nil {
+		out.WriteString(" ")
+		out.WriteString(ls.Type.String())
+	}
+	if ls.Expr != nil {
+		out.WriteString(" = ")
+		out.WriteString(ls.Expr.String())
+	}
 	out.WriteString(";")
 
 	return out.String()
@@ -196,9 +203,11 @@ func (rs *ReturnStmt) String() string {
 }
 
 type FuncStmt struct {
-	Name     *Ident
-	ArgNames []*Ident
-	Body     *BlockStmt
+	Name       *Ident
+	ArgNames   []*Ident
+	ArgTypes   []Expr
+	ReturnType Expr
+	Body       *BlockStmt
 }
 
 func (fs *FuncStmt) stmtNode() {}
@@ -208,11 +217,17 @@ func (fs *FuncStmt) String() string {
 	out.WriteString("fn ")
 	out.WriteString(fs.Name.String())
 	out.WriteString("(")
-	for _, name := range fs.ArgNames {
-		out.WriteString(name.String())
+	for i := 0; i < len(fs.ArgNames) && i < len(fs.ArgTypes); i++ {
+		out.WriteString(fs.ArgNames[i].String())
+		out.WriteString(" ")
+		out.WriteString(fs.ArgTypes[i].String())
 		out.WriteString(", ")
 	}
 	out.WriteString(") ")
+	if fs.ReturnType != nil {
+		out.WriteString(fs.ReturnType.String())
+		out.WriteString(" ")
+	}
 	out.WriteString(fs.Body.String())
 
 	return out.String()

@@ -32,9 +32,9 @@ func TestParseLetStmt(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"let a = 10", "let a = 10;"},
-		{"let b = -10", "let b = (-10);"},
-		{"let c = a + b", "let c = (a + b);"},
+		{"let a int", "let a int;"},
+		{"let b = 10", "let b = 10;"},
+		{"let c int = a + b", "let c int = (a + b);"},
 	}
 
 	for i, tt := range tests {
@@ -115,7 +115,7 @@ func TestParseFuncStmt(t *testing.T) {
 		output string
 	}{
 		{"fn nothing() { 10 }", "fn nothing() { 10; }"},
-		{"fn sum(a, b) { return a + b }", "fn sum(a, b, ) { return (a + b); }"},
+		{"fn sum(a int, b int) int { return a + b }", "fn sum(a int, b int, ) int { return (a + b); }"},
 	}
 
 	for i, tt := range tests {
