@@ -5,92 +5,76 @@ import (
 	"testing"
 )
 
-func TestParseExprStmt(t *testing.T) {
+func TestExpressions(t *testing.T) {
 	tests := []struct {
 		input  string
 		output string
 	}{
-		{"10", "10;"},
-		{"-10", "(-10);"},
-		{"20 + 20 / 2", "(20 + (20 / 2));"},
-		{"(20 + 20) / 2", "((20 + 20) / 2);"},
-		{"sum(10, 20)", "sum(10, 20, );"},
+		{"a", "a"},
+		{"1", "1"},
+		{"-1", "(-1)"},
+		{"~2", "(~2)"},
+		{"!false", "(!false)"},
+		{"(10 + 5)", "(10 + 5)"},
+		{"a = 10", "(a = 10)"},
+		{"true && true", "(true && true)"},
+		{"true || false", "(true || false)"},
+		{"1 & 1", "(1 & 1)"},
+		{"1 | 0", "(1 | 0)"},
+		{"1 ^ 0", "(1 ^ 0)"},
+		{"1 + 1", "(1 + 1)"},
+		{"1 - 1", "(1 - 1)"},
+		{"1 * 1", "(1 * 1)"},
+		{"1 / 1", "(1 / 1)"},
+		{"1 % 1", "(1 % 1)"},
+		{"a()", "a()"},
+		{"sum(1, 3)", "sum(1, 3, )"},
+		{"{}", "{ }"},
+		{"{ 10 }", "{ 10; }"},
+		{"if true { 1 }", "if true { 1; }"},
+		{"if true { 1 } else { 0 }", "if true { 1; } else { 0; }"},
+		{"func() { 10 }", "func() { 10; }"},
 	}
 
 	for i, tt := range tests {
 		l := lexer.New(tt.input)
 		p := New(l)
 
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
+		expr := p.parseExpr(LOWEST)
+		if expr == nil {
+			t.Fatalf("tests[%d]: %s", i, p.Error())
+		}
+
+		if expr.String() != tt.output {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.output, expr.String())
 		}
 	}
 }
 
-func TestParseLetStmt(t *testing.T) {
+func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input  string
 		output string
 	}{
-		{"let a int", "let a int;"},
-		{"let b = 10", "let b = 10;"},
-		{"let c int = a + b", "let c int = (a + b);"},
+		{"let a = 10", "let a = 10;"},
 	}
 
 	for i, tt := range tests {
 		l := lexer.New(tt.input)
 		p := New(l)
 
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
+		stmt := p.parseLetStmt()
+		if stmt == nil {
+			t.Fatalf("tests[%d]: %s", i, p.Error())
+		}
+
+		if stmt.String() != tt.output {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.output, stmt.String())
 		}
 	}
 }
 
-func TestParseBlockStmt(t *testing.T) {
-	tests := []struct {
-		input  string
-		output string
-	}{
-		{"{ let a = 10; print(a + 10) }", "{ let a = 10; print((a + 10), ); }"},
-		{`{
-	let x = 10
-	let y = 10
-	let z = x + y
-	print(z)
-}`, "{ let x = 10; let y = 10; let z = (x + y); print(z, ); }"},
-	}
-
-	for i, tt := range tests {
-		l := lexer.New(tt.input)
-		p := New(l)
-
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
-		}
-	}
-}
-
-func TestParseIfStmt(t *testing.T) {
-	tests := []struct {
-		input  string
-		output string
-	}{
-		{"if a > b { print(a) }", "if (a > b) { print(a, ); }"},
-		{"if a > b { print(a) } else { print(b) }", "if (a > b) { print(a, ); } else { print(b, ); }"},
-	}
-
-	for i, tt := range tests {
-		l := lexer.New(tt.input)
-		p := New(l)
-
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
-		}
-	}
-}
-
-func TestParseReturnStmt(t *testing.T) {
+func TestReturnStatements(t *testing.T) {
 	tests := []struct {
 		input  string
 		output string
@@ -103,42 +87,13 @@ func TestParseReturnStmt(t *testing.T) {
 		l := lexer.New(tt.input)
 		p := New(l)
 
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
+		stmt := p.parseReturnStmt()
+		if stmt == nil {
+			t.Fatalf("tests[%d]: %s", i, p.Error())
+		}
+
+		if stmt.String() != tt.output {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.output, stmt.String())
 		}
 	}
-}
-
-func TestParseFuncStmt(t *testing.T) {
-	tests := []struct {
-		input  string
-		output string
-	}{
-		{"fn nothing() { 10 }", "fn nothing() { 10; }"},
-		{"fn sum(a int, b int) int { return a + b }", "fn sum(a int, b int, ) int { return (a + b); }"},
-	}
-
-	for i, tt := range tests {
-		l := lexer.New(tt.input)
-		p := New(l)
-
-		if !testStmtParsing(t, i, p, tt.output) {
-			t.Fail()
-		}
-	}
-}
-
-func testStmtParsing(t *testing.T, i int, p *Parser, output string) bool {
-	stmt, err := p.parseStmt()
-	if err != nil {
-		t.Errorf("tests[%d]: parser error: %s", i, err)
-		return false
-	}
-
-	if stmt.String() != output {
-		t.Errorf("tests[%d]: expected %q, got %q", i, output, stmt.String())
-		return false
-	}
-
-	return true
 }

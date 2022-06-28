@@ -1,32 +1,41 @@
 package token
 
-type TokenType int
-
-type Token struct {
-	Type TokenType
-	Lit  string
-}
+type Token int
 
 const (
-	_ TokenType = iota
+	_ Token = iota
 
 	ILLEGAL
+	UNEXPECTED
 	EOF
 
 	IDENT
 	INT
 
-	ADD
-	SUB
-	MUL
-	DIV
-
 	ASSIGN
-	LT
-	GT
+	PLUS
+	MINUS
+	ASTERISK
+	SLASH
+	MOD
+
+	AND
+	OR
+	XOR
+	LSHIFT
+	RSHIFT
 	NOT
+
+	LAND
+	LOR
+	BANG
+
 	EQ
 	NEQ
+	LT
+	LTE
+	GT
+	GTE
 
 	COMMA
 	SEMI
@@ -37,30 +46,45 @@ const (
 	RBRACE
 
 	LET
+	RETURN
 	IF
 	ELSE
-	RETURN
 	FUNC
+	WHILE
 )
 
-var TokenName = map[TokenType]string{
-	ILLEGAL: "ILLEGAL",
-	EOF:     "EOF",
+var TokenName = map[Token]string{
+	ILLEGAL:    "ILLEGAL",
+	UNEXPECTED: "UNEXPECTED",
+	EOF:        "EOF",
 
 	IDENT: "IDENT",
 	INT:   "INT",
 
-	ADD: "+",
-	SUB: "-",
-	MUL: "*",
-	DIV: "/",
+	ASSIGN:   "=",
+	PLUS:     "+",
+	MINUS:    "-",
+	ASTERISK: "*",
+	SLASH:    "/",
+	MOD:      "%",
 
-	ASSIGN: "=",
-	LT:     "<",
-	GT:     ">",
-	NOT:    "!",
-	EQ:     "==",
-	NEQ:    "!=",
+	AND:    "&",
+	OR:     "|",
+	XOR:    "^",
+	LSHIFT: "<<",
+	RSHIFT: ">>",
+	NOT:    "~",
+
+	LAND: "&&",
+	LOR:  "||",
+	BANG: "!",
+
+	EQ:  "==",
+	NEQ: "!=",
+	LT:  "<",
+	LTE: "<=",
+	GT:  ">",
+	GTE: ">=",
 
 	COMMA: ",",
 	SEMI:  ";",
@@ -71,25 +95,27 @@ var TokenName = map[TokenType]string{
 	RBRACE: "}",
 
 	LET:    "let",
+	RETURN: "return",
 	IF:     "if",
 	ELSE:   "else",
-	RETURN: "return",
-	FUNC:   "fn",
+	FUNC:   "func",
+	WHILE:  "while",
 }
 
-func (tt TokenType) String() string {
-	return TokenName[tt]
+func (tok Token) String() string {
+	return TokenName[tok]
 }
 
-var keywords = map[string]TokenType{
+var keywords = map[string]Token{
 	"let":    LET,
+	"return": RETURN,
 	"if":     IF,
 	"else":   ELSE,
-	"return": RETURN,
-	"fn":     FUNC,
+	"func":   FUNC,
+	"while":  WHILE,
 }
 
-func LookupIdent(ident string) TokenType {
+func LookupIdent(ident string) Token {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}

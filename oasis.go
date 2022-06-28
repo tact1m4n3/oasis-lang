@@ -21,10 +21,11 @@ func main() {
 
 	l := lexer.New(string(data))
 	p := parser.New(l)
+	p.Error()
 
-	program, err := p.ParseProgram()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err)
+	program := p.ParseProgram()
+	if program == nil {
+		fmt.Fprintf(os.Stderr, "%s", p.Error())
 		os.Exit(1)
 	}
 

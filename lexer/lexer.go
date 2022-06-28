@@ -20,78 +20,143 @@ func New(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) NextToken() token.Token {
-	var tok token.Token
-
+func (l *Lexer) NextToken() (token.Token, string) {
 	l.skipWhitespace()
 
 	if l.insertSemi && (l.ch == 0 || l.ch == '\n' || l.ch == '}') {
 		l.insertSemi = false
-		return token.Token{Type: token.SEMI, Lit: ";"}
+		return token.SEMI, ";"
 	}
 
+	var tok token.Token
+	var lit string
 	l.insertSemi = false
 	switch l.ch {
 	case 0:
-		tok = token.Token{Type: token.EOF, Lit: ""}
-	case '+':
-		tok = token.Token{Type: token.ADD, Lit: "+"}
-	case '-':
-		tok = token.Token{Type: token.SUB, Lit: "-"}
-	case '*':
-		tok = token.Token{Type: token.MUL, Lit: "*"}
-	case '/':
-		tok = token.Token{Type: token.DIV, Lit: "/"}
+		tok = token.EOF
+		lit = ""
 	case '=':
 		if l.peek() == '=' {
 			l.advance()
-			tok = token.Token{Type: token.EQ, Lit: "=="}
+			tok = token.EQ
+			lit = "=="
 		} else {
-			tok = token.Token{Type: token.ASSIGN, Lit: "="}
+			tok = token.ASSIGN
+			lit = "="
 		}
+	case '+':
+		tok = token.PLUS
+		lit = "+"
+	case '-':
+		tok = token.MINUS
+		lit = "-"
+	case '*':
+		tok = token.ASTERISK
+		lit = "*"
+	case '/':
+		tok = token.SLASH
+		lit = "/"
+	case '%':
+		tok = token.MOD
+		lit = "%"
+	case '&':
+		if l.peek() == '&' {
+			l.advance()
+			tok = token.LAND
+			lit = "&&"
+		} else {
+			tok = token.AND
+			lit = "&"
+		}
+	case '|':
+		if l.peek() == '|' {
+			l.advance()
+			tok = token.LOR
+			lit = "||"
+		} else {
+			tok = token.OR
+			lit = "|"
+		}
+	case '^':
+		tok = token.XOR
+		lit = "^"
 	case '<':
-		tok = token.Token{Type: token.LT, Lit: "<"}
+		if l.peek() == '<' {
+			l.advance()
+			tok = token.LSHIFT
+			lit = "<<"
+		} else if l.peek() == '=' {
+			l.advance()
+			tok = token.LTE
+			lit = "<="
+		} else {
+			tok = token.LT
+			lit = "<"
+		}
 	case '>':
-		tok = token.Token{Type: token.GT, Lit: ">"}
+		if l.peek() == '>' {
+			l.advance()
+			tok = token.RSHIFT
+			lit = ">>"
+		} else if l.peek() == '=' {
+			l.advance()
+			tok = token.GTE
+			lit = ">="
+		} else {
+			tok = token.GT
+			lit = ">"
+		}
+	case '~':
+		tok = token.NOT
+		lit = "~"
 	case '!':
 		if l.peek() == '=' {
 			l.advance()
-			tok = token.Token{Type: token.NEQ, Lit: "!="}
+			tok = token.NEQ
+			lit = "!="
 		} else {
-			tok = token.Token{Type: token.NOT, Lit: "!"}
+			tok = token.BANG
+			lit = "!"
 		}
 	case ',':
-		tok = token.Token{Type: token.COMMA, Lit: ","}
+		tok = token.COMMA
+		lit = ","
 	case ';':
-		tok = token.Token{Type: token.SEMI, Lit: ";"}
+		tok = token.SEMI
+		lit = ";"
 	case '(':
-		tok = token.Token{Type: token.LPAREN, Lit: "("}
+		tok = token.LPAREN
+		lit = "("
 	case ')':
 		l.insertSemi = true
-		tok = token.Token{Type: token.RPAREN, Lit: ")"}
+		tok = token.RPAREN
+		lit = ")"
 	case '{':
-		tok = token.Token{Type: token.LBRACE, Lit: "{"}
+		tok = token.LBRACE
+		lit = "{"
 	case '}':
-		tok = token.Token{Type: token.RBRACE, Lit: "}"}
+		l.insertSemi = true
+		tok = token.RBRACE
+		lit = "}"
 	default:
 		if isLetter(l.ch) {
 			l.insertSemi = true
-			tok.Lit = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Lit)
-			return tok
+			lit = l.readIdent()
+			tok = token.LookupIdent(lit)
+			return tok, lit
 		} else if isDigit(l.ch) {
 			l.insertSemi = true
-			tok.Type = token.INT
-			tok.Lit = l.readNumber()
-			return tok
+			tok = token.INT
+			lit = l.readNumber()
+			return tok, lit
 		} else {
-			tok = token.Token{Type: token.ILLEGAL, Lit: string(l.ch)}
+			return token.ILLEGAL, string(l.ch)
 		}
 	}
 
 	l.advance()
 
-	return tok
+	return tok, lit
 }
 
 func (l *Lexer) advance() {
@@ -117,7 +182,7 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-func (l *Lexer) readIdentifier() string {
+func (l *Lexer) readIdent() string {
 	pos := l.pos
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.advance()

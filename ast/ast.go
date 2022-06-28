@@ -2,20 +2,21 @@ package ast
 
 import (
 	"bytes"
+	"oasis/token"
 )
 
 type Node interface {
 	String() string
 }
 
-type Expr interface {
-	Node
-	exprNode()
-}
-
 type Stmt interface {
 	Node
 	stmtNode()
+}
+
+type Expr interface {
+	Node
+	exprNode()
 }
 
 type Program struct {
@@ -29,78 +30,6 @@ func (p *Program) String() string {
 		out.WriteString(stmt.String())
 		out.WriteString(" ")
 	}
-
-	return out.String()
-}
-
-type Ident struct {
-	Value string
-}
-
-func (i *Ident) exprNode()      {}
-func (i *Ident) String() string { return i.Value }
-
-type IntLit struct {
-	Value string
-}
-
-func (il *IntLit) exprNode()      {}
-func (il *IntLit) String() string { return il.Value }
-
-type PrefixExpr struct {
-	Op    string
-	Right Expr
-}
-
-func (pe *PrefixExpr) exprNode() {}
-func (pe *PrefixExpr) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("(")
-	out.WriteString(pe.Op)
-	out.WriteString(pe.Right.String())
-	out.WriteString(")")
-
-	return out.String()
-}
-
-type InfixExpr struct {
-	Left  Expr
-	Op    string
-	Right Expr
-}
-
-func (ie *InfixExpr) exprNode() {}
-func (ie *InfixExpr) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("(")
-	out.WriteString(ie.Left.String())
-	out.WriteString(" ")
-	out.WriteString(ie.Op)
-	out.WriteString(" ")
-	out.WriteString(ie.Right.String())
-	out.WriteString(")")
-
-	return out.String()
-}
-
-type CallExpr struct {
-	Left Expr
-	Args []Expr
-}
-
-func (ce *CallExpr) exprNode() {}
-func (ce *CallExpr) String() string {
-	var out bytes.Buffer
-
-	out.WriteString(ce.Left.String())
-	out.WriteString("(")
-	for _, arg := range ce.Args {
-		out.WriteString(arg.String())
-		out.WriteString(", ")
-	}
-	out.WriteString(")")
 
 	return out.String()
 }
@@ -120,9 +49,8 @@ func (es *ExprStmt) String() string {
 }
 
 type LetStmt struct {
-	Name *Ident
-	Type Expr
-	Expr Expr
+	Name  *Ident
+	Value Expr
 }
 
 func (ls *LetStmt) stmtNode() {}
@@ -131,29 +59,115 @@ func (ls *LetStmt) String() string {
 
 	out.WriteString("let ")
 	out.WriteString(ls.Name.String())
-	if ls.Type != nil {
-		out.WriteString(" ")
-		out.WriteString(ls.Type.String())
-	}
-	if ls.Expr != nil {
+	if ls.Value != nil {
 		out.WriteString(" = ")
-		out.WriteString(ls.Expr.String())
+		out.WriteString(ls.Value.String())
 	}
 	out.WriteString(";")
 
 	return out.String()
 }
 
-type BlockStmt struct {
+type ReturnStmt struct {
+	Value Expr
+}
+
+func (rs *ReturnStmt) stmtNode() {}
+func (rs *ReturnStmt) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("return")
+	if rs.Value != nil {
+		out.WriteString(" ")
+		out.WriteString(rs.Value.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
+}
+
+type Ident struct {
+	Value string
+}
+
+func (i *Ident) exprNode()      {}
+func (i *Ident) String() string { return i.Value }
+
+type IntLit struct {
+	Value string
+}
+
+func (il *IntLit) exprNode()      {}
+func (il *IntLit) String() string { return il.Value }
+
+type PrefixExpr struct {
+	Op    token.Token
+	Right Expr
+}
+
+func (pe *PrefixExpr) exprNode() {}
+func (pe *PrefixExpr) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(pe.Op.String())
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type InfixExpr struct {
+	Left  Expr
+	Op    token.Token
+	Right Expr
+}
+
+func (ie *InfixExpr) exprNode() {}
+func (ie *InfixExpr) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString(" ")
+	out.WriteString(ie.Op.String())
+	out.WriteString(" ")
+	out.WriteString(ie.Right.String())
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type CallExpr struct {
+	Func Expr
+	Args []Expr
+}
+
+func (ce *CallExpr) exprNode() {}
+func (ce *CallExpr) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ce.Func.String())
+	out.WriteString("(")
+	for _, arg := range ce.Args {
+		out.WriteString(arg.String())
+		out.WriteString(", ")
+	}
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type BlockExpr struct {
 	Stmts []Stmt
 }
 
-func (bs *BlockStmt) stmtNode() {}
-func (bs *BlockStmt) String() string {
+func (be *BlockExpr) exprNode() {}
+func (be *BlockExpr) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("{ ")
-	for _, stmt := range bs.Stmts {
+	for _, stmt := range be.Stmts {
 		out.WriteString(stmt.String())
 		out.WriteString(" ")
 	}
@@ -162,73 +176,44 @@ func (bs *BlockStmt) String() string {
 	return out.String()
 }
 
-type IfStmt struct {
-	Expr      Expr
-	IfBlock   *BlockStmt
-	ElseBlock *BlockStmt
+type IfExpr struct {
+	Condition Expr
+	TrueCase  Expr
+	FalseCase Expr
 }
 
-func (is *IfStmt) stmtNode() {}
-func (is *IfStmt) String() string {
+func (ie *IfExpr) exprNode() {}
+func (ie *IfExpr) String() string {
 	var out bytes.Buffer
 
 	out.WriteString("if ")
-	out.WriteString(is.Expr.String())
+	out.WriteString(ie.Condition.String())
 	out.WriteString(" ")
-	out.WriteString(is.IfBlock.String())
-	if is.ElseBlock != nil {
+	out.WriteString(ie.TrueCase.String())
+	if ie.FalseCase != nil {
 		out.WriteString(" else ")
-		out.WriteString(is.ElseBlock.String())
+		out.WriteString(ie.FalseCase.String())
 	}
 
 	return out.String()
 }
 
-type ReturnStmt struct {
-	Expr Expr
+type FuncLit struct {
+	Params []*Ident
+	Body   Expr
 }
 
-func (rs *ReturnStmt) stmtNode() {}
-func (rs *ReturnStmt) String() string {
+func (fl *FuncLit) exprNode() {}
+func (fl *FuncLit) String() string {
 	var out bytes.Buffer
 
-	out.WriteString("return")
-	if rs.Expr != nil {
-		out.WriteString(" ")
-		out.WriteString(rs.Expr.String())
-	}
-	out.WriteString(";")
-
-	return out.String()
-}
-
-type FuncStmt struct {
-	Name       *Ident
-	ArgNames   []*Ident
-	ArgTypes   []Expr
-	ReturnType Expr
-	Body       *BlockStmt
-}
-
-func (fs *FuncStmt) stmtNode() {}
-func (fs *FuncStmt) String() string {
-	var out bytes.Buffer
-
-	out.WriteString("fn ")
-	out.WriteString(fs.Name.String())
-	out.WriteString("(")
-	for i := 0; i < len(fs.ArgNames) && i < len(fs.ArgTypes); i++ {
-		out.WriteString(fs.ArgNames[i].String())
-		out.WriteString(" ")
-		out.WriteString(fs.ArgTypes[i].String())
+	out.WriteString("func(")
+	for _, param := range fl.Params {
+		out.WriteString(param.String())
 		out.WriteString(", ")
 	}
 	out.WriteString(") ")
-	if fs.ReturnType != nil {
-		out.WriteString(fs.ReturnType.String())
-		out.WriteString(" ")
-	}
-	out.WriteString(fs.Body.String())
+	out.WriteString(fl.Body.String())
 
 	return out.String()
 }
