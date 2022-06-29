@@ -13,10 +13,10 @@ const (
 	INT
 
 	ASSIGN
-	PLUS
-	MINUS
-	ASTERISK
-	SLASH
+	ADD
+	SUB
+	MUL
+	DIV
 	MOD
 
 	AND
@@ -24,11 +24,23 @@ const (
 	XOR
 	LSHIFT
 	RSHIFT
-	NOT
+	TILDE
+
+	ADD_ASSIGN
+	SUB_ASSIGN
+	MUL_ASSIGN
+	DIV_ASSIGN
+	MOD_ASSIGN
+
+	AND_ASSIGN
+	OR_ASSIGN
+	XOR_ASSIGN
+	LSHIFT_ASSIGN
+	RSHIFT_ASSIGN
 
 	LAND
 	LOR
-	BANG
+	NOT
 
 	EQ
 	NEQ
@@ -46,11 +58,13 @@ const (
 	RBRACE
 
 	LET
-	RETURN
 	IF
 	ELSE
-	FUNC
 	WHILE
+	CONTINUE
+	BREAK
+	FUNC
+	RETURN
 )
 
 var TokenName = map[Token]string{
@@ -61,23 +75,35 @@ var TokenName = map[Token]string{
 	IDENT: "IDENT",
 	INT:   "INT",
 
-	ASSIGN:   "=",
-	PLUS:     "+",
-	MINUS:    "-",
-	ASTERISK: "*",
-	SLASH:    "/",
-	MOD:      "%",
+	ASSIGN: "=",
+	ADD:    "+",
+	SUB:    "-",
+	MUL:    "*",
+	DIV:    "/",
+	MOD:    "%",
 
 	AND:    "&",
 	OR:     "|",
 	XOR:    "^",
 	LSHIFT: "<<",
 	RSHIFT: ">>",
-	NOT:    "~",
+	TILDE:  "~",
+
+	ADD_ASSIGN: "+=",
+	SUB_ASSIGN: "-=",
+	MUL_ASSIGN: "*=",
+	DIV_ASSIGN: "/=",
+	MOD_ASSIGN: "%=",
+
+	AND_ASSIGN:    "&=",
+	OR_ASSIGN:     "|=",
+	XOR_ASSIGN:    "^=",
+	LSHIFT_ASSIGN: "<<=",
+	RSHIFT_ASSIGN: ">>=",
 
 	LAND: "&&",
 	LOR:  "||",
-	BANG: "!",
+	NOT:  "!",
 
 	EQ:  "==",
 	NEQ: "!=",
@@ -94,12 +120,14 @@ var TokenName = map[Token]string{
 	LBRACE: "{",
 	RBRACE: "}",
 
-	LET:    "let",
-	RETURN: "return",
-	IF:     "if",
-	ELSE:   "else",
-	FUNC:   "func",
-	WHILE:  "while",
+	LET:      "let",
+	IF:       "if",
+	ELSE:     "else",
+	WHILE:    "while",
+	CONTINUE: "continue",
+	BREAK:    "break",
+	FUNC:     "func",
+	RETURN:   "return",
 }
 
 func (tok Token) String() string {
@@ -107,12 +135,14 @@ func (tok Token) String() string {
 }
 
 var keywords = map[string]Token{
-	"let":    LET,
-	"return": RETURN,
-	"if":     IF,
-	"else":   ELSE,
-	"func":   FUNC,
-	"while":  WHILE,
+	"let":      LET,
+	"if":       IF,
+	"else":     ELSE,
+	"while":    WHILE,
+	"continue": CONTINUE,
+	"break":    BREAK,
+	"func":     FUNC,
+	"return":   RETURN,
 }
 
 func LookupIdent(ident string) Token {

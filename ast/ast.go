@@ -86,6 +86,29 @@ func (rs *ReturnStmt) String() string {
 	return out.String()
 }
 
+type ContinueStmt struct{}
+
+func (cs *ContinueStmt) stmtNode()      {}
+func (cs *ContinueStmt) String() string { return "continue;" }
+
+type BreakStmt struct {
+	Value Expr
+}
+
+func (bs *BreakStmt) stmtNode() {}
+func (bs *BreakStmt) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("break")
+	if bs.Value != nil {
+		out.WriteString(" ")
+		out.WriteString(bs.Value.String())
+	}
+	out.WriteString(";")
+
+	return out.String()
+}
+
 type Ident struct {
 	Value string
 }
@@ -194,6 +217,23 @@ func (ie *IfExpr) String() string {
 		out.WriteString(" else ")
 		out.WriteString(ie.FalseCase.String())
 	}
+
+	return out.String()
+}
+
+type WhileExpr struct {
+	Condition Expr
+	Body      Expr
+}
+
+func (we *WhileExpr) exprNode() {}
+func (we *WhileExpr) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("while ")
+	out.WriteString(we.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(we.Body.String())
 
 	return out.String()
 }

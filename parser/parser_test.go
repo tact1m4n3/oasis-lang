@@ -17,6 +17,15 @@ func TestExpressions(t *testing.T) {
 		{"!false", "(!false)"},
 		{"(10 + 5)", "(10 + 5)"},
 		{"a = 10", "(a = 10)"},
+		{"a += 10", "(a += 10)"},
+		{"a -= 10", "(a -= 10)"},
+		{"a *= 10", "(a *= 10)"},
+		{"a /= 10", "(a /= 10)"},
+		{"a &= 10", "(a &= 10)"},
+		{"a |= 10", "(a |= 10)"},
+		{"a ^= 10", "(a ^= 10)"},
+		{"a <<= 10", "(a <<= 10)"},
+		{"a >>= 10", "(a >>= 10)"},
 		{"true && true", "(true && true)"},
 		{"true || false", "(true || false)"},
 		{"1 & 1", "(1 & 1)"},
@@ -33,6 +42,7 @@ func TestExpressions(t *testing.T) {
 		{"{ 10 }", "{ 10; }"},
 		{"if true { 1 }", "if true { 1; }"},
 		{"if true { 1 } else { 0 }", "if true { 1; } else { 0; }"},
+		{"while true { 10 }", "while true { 10; }"},
 		{"func() { 10 }", "func() { 10; }"},
 	}
 
@@ -64,6 +74,53 @@ func TestLetStatements(t *testing.T) {
 		p := New(l)
 
 		stmt := p.parseLetStmt()
+		if stmt == nil {
+			t.Fatalf("tests[%d]: %s", i, p.Error())
+		}
+
+		if stmt.String() != tt.output {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.output, stmt.String())
+		}
+	}
+}
+
+func TestContinueStatements(t *testing.T) {
+	tests := []struct {
+		input  string
+		output string
+	}{
+		{"continue", "continue;"},
+	}
+
+	for i, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+
+		stmt := p.parseContinueStmt()
+		if stmt == nil {
+			t.Fatalf("tests[%d]: %s", i, p.Error())
+		}
+
+		if stmt.String() != tt.output {
+			t.Fatalf("tests[%d]: expected %q, got %q", i, tt.output, stmt.String())
+		}
+	}
+}
+
+func TestBreakStatements(t *testing.T) {
+	tests := []struct {
+		input  string
+		output string
+	}{
+		{"break", "break;"},
+		{"break 10", "break 10;"},
+	}
+
+	for i, tt := range tests {
+		l := lexer.New(tt.input)
+		p := New(l)
+
+		stmt := p.parseBreakStmt()
 		if stmt == nil {
 			t.Fatalf("tests[%d]: %s", i, p.Error())
 		}

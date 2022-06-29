@@ -26,26 +26,35 @@ const (
 )
 
 var precedences = map[token.Token]int{
-	token.ASSIGN:   ASSIGN,
-	token.LAND:     LAND,
-	token.LOR:      LOR,
-	token.AND:      AND,
-	token.OR:       OR,
-	token.XOR:      XOR,
-	token.EQ:       EQUALS,
-	token.NEQ:      EQUALS,
-	token.LT:       COMPARISON,
-	token.LTE:      COMPARISON,
-	token.GT:       COMPARISON,
-	token.GTE:      COMPARISON,
-	token.LSHIFT:   SHIFT,
-	token.RSHIFT:   SHIFT,
-	token.PLUS:     TERM,
-	token.MINUS:    TERM,
-	token.ASTERISK: FACTOR,
-	token.SLASH:    FACTOR,
-	token.MOD:      FACTOR,
-	token.LPAREN:   CALL,
+	token.ASSIGN:        ASSIGN,
+	token.ADD_ASSIGN:    ASSIGN,
+	token.SUB_ASSIGN:    ASSIGN,
+	token.MUL_ASSIGN:    ASSIGN,
+	token.DIV_ASSIGN:    ASSIGN,
+	token.AND_ASSIGN:    ASSIGN,
+	token.OR_ASSIGN:     ASSIGN,
+	token.XOR_ASSIGN:    ASSIGN,
+	token.LSHIFT_ASSIGN: ASSIGN,
+	token.RSHIFT_ASSIGN: ASSIGN,
+	token.LAND:          LAND,
+	token.LOR:           LOR,
+	token.AND:           AND,
+	token.OR:            OR,
+	token.XOR:           XOR,
+	token.EQ:            EQUALS,
+	token.NEQ:           EQUALS,
+	token.LT:            COMPARISON,
+	token.LTE:           COMPARISON,
+	token.GT:            COMPARISON,
+	token.GTE:           COMPARISON,
+	token.LSHIFT:        SHIFT,
+	token.RSHIFT:        SHIFT,
+	token.ADD:           TERM,
+	token.SUB:           TERM,
+	token.MUL:           FACTOR,
+	token.DIV:           FACTOR,
+	token.MOD:           FACTOR,
+	token.LPAREN:        CALL,
 }
 
 type (
@@ -72,16 +81,26 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns = make(map[token.Token]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdent)
 	p.registerPrefix(token.INT, p.parseIntLit)
-	p.registerPrefix(token.MINUS, p.parsePrefixExpr)
+	p.registerPrefix(token.SUB, p.parsePrefixExpr)
+	p.registerPrefix(token.TILDE, p.parsePrefixExpr)
 	p.registerPrefix(token.NOT, p.parsePrefixExpr)
-	p.registerPrefix(token.BANG, p.parsePrefixExpr)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpr)
 	p.registerPrefix(token.LBRACE, p.parseBlockExpr)
 	p.registerPrefix(token.IF, p.parseIfExpr)
+	p.registerPrefix(token.WHILE, p.parseWhileExpr)
 	p.registerPrefix(token.FUNC, p.parseFuncLit)
 
 	p.infixParseFns = make(map[token.Token]infixParseFn)
 	p.registerInfix(token.ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.ADD_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.SUB_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.MUL_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.DIV_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.AND_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.OR_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.XOR_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.LSHIFT_ASSIGN, p.parseInfixExpr)
+	p.registerInfix(token.RSHIFT_ASSIGN, p.parseInfixExpr)
 	p.registerInfix(token.LAND, p.parseInfixExpr)
 	p.registerInfix(token.LOR, p.parseInfixExpr)
 	p.registerInfix(token.AND, p.parseInfixExpr)
@@ -95,10 +114,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GTE, p.parseInfixExpr)
 	p.registerInfix(token.LSHIFT, p.parseInfixExpr)
 	p.registerInfix(token.RSHIFT, p.parseInfixExpr)
-	p.registerInfix(token.PLUS, p.parseInfixExpr)
-	p.registerInfix(token.MINUS, p.parseInfixExpr)
-	p.registerInfix(token.ASTERISK, p.parseInfixExpr)
-	p.registerInfix(token.SLASH, p.parseInfixExpr)
+	p.registerInfix(token.ADD, p.parseInfixExpr)
+	p.registerInfix(token.SUB, p.parseInfixExpr)
+	p.registerInfix(token.MUL, p.parseInfixExpr)
+	p.registerInfix(token.DIV, p.parseInfixExpr)
 	p.registerInfix(token.MOD, p.parseInfixExpr)
 	p.registerInfix(token.LPAREN, p.parseCallExpr)
 
@@ -127,6 +146,10 @@ func (p *Parser) parseStmt() ast.Stmt {
 	switch p.tok {
 	case token.LET:
 		return p.parseLetStmt()
+	case token.CONTINUE:
+		return p.parseContinueStmt()
+	case token.BREAK:
+		return p.parseBreakStmt()
 	case token.RETURN:
 		return p.parseReturnStmt()
 	default:
@@ -175,6 +198,38 @@ func (p *Parser) parseLetStmt() ast.Stmt {
 	return &ast.LetStmt{Name: name, Value: value}
 }
 
+func (p *Parser) parseContinueStmt() ast.Stmt {
+	p.advance()
+
+	if !p.expect(token.SEMI) {
+		return nil
+	}
+	p.advance()
+
+	return &ast.ContinueStmt{}
+}
+
+func (p *Parser) parseBreakStmt() ast.Stmt {
+	p.advance()
+
+	if p.tok == token.SEMI {
+		p.advance()
+		return &ast.BreakStmt{}
+	}
+
+	value := p.parseExpr(LOWEST)
+	if value == nil {
+		return nil
+	}
+
+	if !p.expect(token.SEMI) {
+		return nil
+	}
+	p.advance()
+
+	return &ast.BreakStmt{Value: value}
+}
+
 func (p *Parser) parseReturnStmt() ast.Stmt {
 	p.advance()
 
@@ -200,7 +255,7 @@ func (p *Parser) parseExpr(prec int) ast.Expr {
 	prefix := p.prefixParseFns[p.tok]
 	if prefix == nil {
 		p.err = fmt.Errorf("expected %q, %q, %q, %q, %q or %q, got %q",
-			token.IDENT, token.INT, token.MINUS, token.NOT, token.BANG, token.LPAREN, p.tok)
+			token.IDENT, token.INT, token.SUB, token.TILDE, token.NOT, token.LPAREN, p.tok)
 		return nil
 	}
 
@@ -367,6 +422,22 @@ func (p *Parser) parseIfExpr() ast.Expr {
 	}
 
 	return &ast.IfExpr{Condition: condition, TrueCase: trueCase}
+}
+
+func (p *Parser) parseWhileExpr() ast.Expr {
+	p.advance()
+
+	condition := p.parseExpr(LOWEST)
+	if condition == nil {
+		return nil
+	}
+
+	body := p.parseExpr(LOWEST)
+	if body == nil {
+		return nil
+	}
+
+	return &ast.WhileExpr{Condition: condition, Body: body}
 }
 
 func (p *Parser) parseFuncLit() ast.Expr {

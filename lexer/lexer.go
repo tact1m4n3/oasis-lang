@@ -45,22 +45,56 @@ func (l *Lexer) NextToken() (token.Token, string) {
 			lit = "="
 		}
 	case '+':
-		tok = token.PLUS
-		lit = "+"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.ADD_ASSIGN
+			lit = "+="
+		} else {
+			tok = token.ADD
+			lit = "+"
+		}
 	case '-':
-		tok = token.MINUS
-		lit = "-"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.SUB_ASSIGN
+			lit = "-="
+		} else {
+			tok = token.SUB
+			lit = "-"
+		}
 	case '*':
-		tok = token.ASTERISK
-		lit = "*"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.MUL_ASSIGN
+			lit = "*="
+		} else {
+			tok = token.MUL
+			lit = "*"
+		}
 	case '/':
-		tok = token.SLASH
-		lit = "/"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.DIV_ASSIGN
+			lit = "/="
+		} else {
+			tok = token.DIV
+			lit = "/"
+		}
 	case '%':
-		tok = token.MOD
-		lit = "%"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.MOD_ASSIGN
+			lit = "%="
+		} else {
+			tok = token.MOD
+			lit = "%"
+		}
 	case '&':
-		if l.peek() == '&' {
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.AND_ASSIGN
+			lit = "&="
+		} else if l.peek() == '&' {
 			l.advance()
 			tok = token.LAND
 			lit = "&&"
@@ -69,7 +103,11 @@ func (l *Lexer) NextToken() (token.Token, string) {
 			lit = "&"
 		}
 	case '|':
-		if l.peek() == '|' {
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.OR_ASSIGN
+			lit = "|="
+		} else if l.peek() == '|' {
 			l.advance()
 			tok = token.LOR
 			lit = "||"
@@ -78,13 +116,25 @@ func (l *Lexer) NextToken() (token.Token, string) {
 			lit = "|"
 		}
 	case '^':
-		tok = token.XOR
-		lit = "^"
+		if l.peek() == '=' {
+			l.advance()
+			tok = token.XOR_ASSIGN
+			lit = "^="
+		} else {
+			tok = token.XOR
+			lit = "^"
+		}
 	case '<':
 		if l.peek() == '<' {
 			l.advance()
-			tok = token.LSHIFT
-			lit = "<<"
+			if l.peek() == '=' {
+				l.advance()
+				tok = token.LSHIFT_ASSIGN
+				lit = "<<="
+			} else {
+				tok = token.LSHIFT
+				lit = "<<"
+			}
 		} else if l.peek() == '=' {
 			l.advance()
 			tok = token.LTE
@@ -96,8 +146,14 @@ func (l *Lexer) NextToken() (token.Token, string) {
 	case '>':
 		if l.peek() == '>' {
 			l.advance()
-			tok = token.RSHIFT
-			lit = ">>"
+			if l.peek() == '=' {
+				l.advance()
+				tok = token.RSHIFT_ASSIGN
+				lit = ">>="
+			} else {
+				tok = token.RSHIFT
+				lit = ">>"
+			}
 		} else if l.peek() == '=' {
 			l.advance()
 			tok = token.GTE
@@ -107,7 +163,7 @@ func (l *Lexer) NextToken() (token.Token, string) {
 			lit = ">"
 		}
 	case '~':
-		tok = token.NOT
+		tok = token.TILDE
 		lit = "~"
 	case '!':
 		if l.peek() == '=' {
@@ -115,7 +171,7 @@ func (l *Lexer) NextToken() (token.Token, string) {
 			tok = token.NEQ
 			lit = "!="
 		} else {
-			tok = token.BANG
+			tok = token.NOT
 			lit = "!"
 		}
 	case ',':
